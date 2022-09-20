@@ -28,7 +28,6 @@ public class Warc2Warcquet {
     private final Set<URI> concurrentIdSet = new HashSet<>();
     private final ParquetWriter<CaptureEvent> writer;
     private MutableCaptureEvent event;
-    boolean inCaptureEvent = false;
     private String referrer;
     private final boolean verbose;
     private String software;
@@ -90,8 +89,10 @@ public class Warc2Warcquet {
     }
 
     public UUID getRecordUUID(WarcRecord record) {
-        URI id = record.id();
-        return idToUUID(id);
+        String id = record.headers().first("WARC-Record-ID").orElse(null);
+        String uuidPrefix = "urn:uuid:";
+        if (id == null || !id.startsWith(uuidPrefix)) return null;
+        return UUID.fromString(id.substring(uuidPrefix.length()));
     }
 
     private static UUID idToUUID(URI id) {
@@ -202,6 +203,7 @@ public class Warc2Warcquet {
     }
 
     private void endCaptureEvent() throws IOException {
+        if (verbose) System.out.println("-- /capture --");
         if (event.getVia() == null && referrer != null) {
             event.setVia(referrer);
         }
@@ -211,7 +213,8 @@ public class Warc2Warcquet {
     }
 
     private boolean isConcurrentToCurrentEvent(WarcCaptureRecord record) {
-        if (concurrentIdSet.contains(record.id())) {
+        if (record.headers().first("WARC-Record-ID").isPresent() &&
+                concurrentIdSet.contains(record.id())) {
             return true;
         }
         for (URI id : record.concurrentTo()) {
@@ -227,26 +230,28 @@ public class Warc2Warcquet {
             WarcCaptureRecord captureRecord = (WarcCaptureRecord) record;
             if (!isConcurrentToCurrentEvent(captureRecord)) {
                 // record is not concurrent so start a new capture event
-                if (inCaptureEvent) {
+                if (event != null) {
                     endCaptureEvent();
                     concurrentIdSet.clear();
-                    inCaptureEvent = false;
                 }
                 startCaptureEvent();
-                inCaptureEvent = true;
             }
-            concurrentIdSet.add(captureRecord.id());
+            if (captureRecord.headers().first("WARC-Record-ID").isPresent()) {
+                concurrentIdSet.add(captureRecord.id());
+            }
             concurrentIdSet.addAll(captureRecord.concurrentTo());
         } else {
             // we encountered a non-capture record so end any active capture event
-            if (inCaptureEvent) {
+            if (event != null) {
                 endCaptureEvent();
                 concurrentIdSet.clear();
-                inCaptureEvent = false;
             }
         }
 
-        if (verbose) System.out.println(record);
+        if (verbose) {
+            String url = record instanceof WarcCaptureRecord ? ((WarcCaptureRecord) record).target() : null;
+            System.out.println(record.type() + " " + record.date() + " " + url);
+        }
         if (record instanceof WarcRequest) {
             startRequest((WarcRequest) record, position);
         } else if (record instanceof WarcResponse) {
@@ -285,7 +290,7 @@ public class Warc2Warcquet {
             endRecord(record, position, length);
             record = next;
         }
-        if (!concurrentIdSet.isEmpty()) {
+        if (event != null) {
             endCaptureEvent();
         }
     }
