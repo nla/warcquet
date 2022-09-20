@@ -373,8 +373,14 @@ public class Warc2Warcquet {
             Warc2Warcquet converter = new Warc2Warcquet(writer, verbose);
             for (String warcFile : warcFiles) {
                 try (var reader = openWarcReader(warcFile)) {
-                    String filename = warcFile.replaceAll(".*[/\\\\]", "");
-                    converter.scan(reader, filename);
+                    try {
+                        String filename = warcFile.replaceAll(".*[/\\\\]", "");
+                        converter.scan(reader, filename);
+                    } catch (Exception e) {
+                        System.err.println("Failed on " + warcFile);
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
                 }
             }
         }
