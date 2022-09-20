@@ -103,7 +103,7 @@ public class Warc2Warcquet {
 
     public void startResponseOrResource(WarcCaptureRecord record, long position) throws IOException {
         String url = record.target();
-        event.setUrl(url);
+        event.setUrlFields(url);
         event.setDate(record.date());
         event.setResponsePosition(position);
         event.setResponseRecordType(record.type());

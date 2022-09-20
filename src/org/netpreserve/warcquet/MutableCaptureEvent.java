@@ -57,12 +57,20 @@ public class MutableCaptureEvent implements CaptureEvent {
     }
     public void setUrl(String url) {
         this.url = url;
-        surtKey = URIs.toNormalizedSurt(url);
+    }
+
+    public void setUrlFields(String url) {
+        setUrl(url);
+        setSurtKey(URIs.toNormalizedSurt(url));
         URI uri = URIs.parseLeniently(url);
         String host = uri.getHost();
         try {
             InternetDomainName domainName = InternetDomainName.from(host);
-            setSurtDomain(surt(domainName.topPrivateDomain()));
+            if (domainName.isUnderPublicSuffix()) {
+                setSurtDomain(surt(domainName.topPrivateDomain()));
+            } else if (domainName.isUnderRegistrySuffix()) {
+                setSurtDomain(surt(domainName.topDomainUnderRegistrySuffix()));
+            }
             setSurtRegistry(surt(domainName.registrySuffix()));
         } catch (IllegalArgumentException e) {
             // just ignore invalid domains
