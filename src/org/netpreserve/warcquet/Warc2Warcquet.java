@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class Warc2Warcquet {
-    private final String filename;
+    private String filename;
     private final Set<URI> concurrentIdSet = new HashSet<>();
     private final ParquetWriter<CaptureEvent> writer;
     private MutableCaptureEvent event;
@@ -34,15 +34,15 @@ public class Warc2Warcquet {
     private String software;
     private String softwareVersion;
 
-    private Warc2Warcquet(String filename, ParquetWriter<CaptureEvent> writer, boolean verbose) {
-        this.filename = filename;
+    private Warc2Warcquet(ParquetWriter<CaptureEvent> writer, boolean verbose) {
         this.writer = writer;
         this.verbose = verbose;
     }
 
-    private void startFile() {
+    private void startFile(String filename) {
         softwareVersion = null;
         software = null;
+        this.filename = filename;
     }
 
     private void startWarcinfo(Warcinfo warcinfo, long position) throws IOException {
@@ -271,8 +271,8 @@ public class Warc2Warcquet {
         }
     }
 
-    public void scan(WarcReader reader) throws IOException {
-        startFile();
+    public void scan(WarcReader reader, String filename) throws IOException {
+        startFile(filename);
         WarcRecord record = reader.next().orElse(null);
         while (record != null) {
             long position = reader.position();
@@ -346,10 +346,11 @@ public class Warc2Warcquet {
                 .withCompressionCodec(compression)
                 .withWriterVersion(parquetVersion)
                 .build()) {
+            Warc2Warcquet converter = new Warc2Warcquet(writer, verbose);
             for (String warcFile : warcFiles) {
                 try (var reader = openWarcReader(warcFile)) {
                     String filename = warcFile.replaceAll(".*[/\\\\]", "");
-                    new Warc2Warcquet(filename, writer, verbose).scan(reader);
+                    converter.scan(reader, filename);
                 }
             }
         }
