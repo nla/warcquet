@@ -114,18 +114,22 @@ public class Warc2Warcquet {
         event.setResponseRecordType(record.type());
         event.setResponseUUID(getRecordUUID(record));
         record.ipAddress().ifPresent(event::setIpAddress);
-        var payload = record.payload().orElse(null);
-        if (payload != null) {
-            try {
-                event.setResponsePayloadType(payload.type().base().toString());
-            } catch (IllegalArgumentException e) {
-                // ignore bad media-type
+        try {
+            var payload = record.payload().orElse(null);
+            if (payload != null) {
+                try {
+                    event.setResponsePayloadType(payload.type().base().toString());
+                } catch (IllegalArgumentException e) {
+                    // ignore bad media-type
+                }
+                byte[] sha1 = consumeAndSha1Payload(payload);
+                event.setResponsePayloadLength(payload.body().position());
+                if (event.getResponseLength() > 0) {
+                    event.setResponsePayloadSha1(sha1);
+                }
             }
-            byte[] sha1 = consumeAndSha1Payload(payload);
-            event.setResponsePayloadLength(payload.body().position());
-            if (event.getResponseLength() > 0) {
-                event.setResponsePayloadSha1(sha1);
-            }
+        } catch (ParsingException e) {
+            if (verbose) System.err.println(e);
         }
     }
 
@@ -171,20 +175,20 @@ public class Warc2Warcquet {
     public void startRequest(WarcRequest request, long position) throws IOException {
         request.ipAddress().ifPresent(event::setIpAddress);
         event.setRequestUUID(getRecordUUID(request));
-        var payload = request.payload().orElse(null);
-        if (payload != null) {
-            try {
-                event.setRequestPayloadType(payload.type().base().toString());
-            } catch (IllegalArgumentException e) {
-                // ignore bad media-type
-            }
-            byte[] sha1 = consumeAndSha1Payload(payload);
-            event.setRequestPayloadLength(payload.body().position());
-            if (event.getRequestPayloadLength() > 0) {
-                event.setRequestPayloadSha1(sha1);
-            }
-        }
         try {
+            var payload = request.payload().orElse(null);
+            if (payload != null) {
+                try {
+                    event.setRequestPayloadType(payload.type().base().toString());
+                } catch (IllegalArgumentException e) {
+                    // ignore bad media-type
+                }
+                byte[] sha1 = consumeAndSha1Payload(payload);
+                event.setRequestPayloadLength(payload.body().position());
+                if (event.getRequestPayloadLength() > 0) {
+                    event.setRequestPayloadSha1(sha1);
+                }
+            }
             if (request.contentType().equals(MediaType.HTTP_REQUEST)) {
                 event.setHttpMethod(request.http().method());
                 referrer = request.http().headers().first("Referer").orElse(null);
