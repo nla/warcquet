@@ -30,7 +30,7 @@ public class Warc2Warcquet {
     private MutableCaptureEvent event;
     boolean inCaptureEvent = false;
     private String referrer;
-    private boolean verbose;
+    private final boolean verbose;
     private String software;
     private String softwareVersion;
 
@@ -118,6 +118,9 @@ public class Warc2Warcquet {
             }
             byte[] sha1 = consumeAndSha1Payload(payload);
             event.setResponsePayloadLength(payload.body().position());
+            if (event.getResponseLength() > 0) {
+                event.setResponsePayloadSha1(sha1);
+            }
         }
     }
 
@@ -141,7 +144,7 @@ public class Warc2Warcquet {
             }
             return digest.bytes();
         } else {
-            Hasher hasher = Hashing.sha1().newHasher();
+            @SuppressWarnings({"deprecation", "UnstableApiUsage"}) Hasher hasher = Hashing.sha1().newHasher();
             try {
                 ByteStreams.copy(payload.body().stream(), Funnels.asOutputStream(hasher));
             } catch (EOFException e) {
@@ -287,7 +290,7 @@ public class Warc2Warcquet {
         }
     }
 
-    public static void main(String args[]) throws IOException {
+    public static void main(String[] args) throws IOException {
         Path outFile = null;
         var warcFiles = new ArrayList<String>();
         CompressionCodecName compression = CompressionCodecName.UNCOMPRESSED;
