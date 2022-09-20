@@ -53,6 +53,7 @@ public class MutableCaptureEvent implements CaptureEvent {
     private String hopsFromSeed;
 
     private static String surt(InternetDomainName name) {
+        if (name == null) return null;
         return String.join(",", name.parts().reverse());
     }
     public void setUrl(String url) {
