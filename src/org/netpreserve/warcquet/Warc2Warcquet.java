@@ -62,7 +62,6 @@ public class Warc2Warcquet {
     }
 
     public void startResponse(WarcResponse response, long position) throws IOException {
-        startResponseOrResource(response, position);
         if (response.contentType().equals(MediaType.HTTP_RESPONSE)) {
             try {
                 handleHttpResponse(response.http());
@@ -70,6 +69,7 @@ public class Warc2Warcquet {
                 if (verbose) System.err.println(e);
             }
         }
+        startResponseOrResource(response, position);
     }
 
     private void handleHttpResponse(HttpResponse httpResponse) throws IOException {
