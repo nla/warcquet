@@ -64,6 +64,7 @@ public class MutableCaptureEvent implements CaptureEvent {
         setSurtKey(URIs.toNormalizedSurt(url));
         URI uri = URIs.parseLeniently(url);
         String host = uri.getHost();
+        if (host == null) return;
         try {
             InternetDomainName domainName = InternetDomainName.from(host);
             if (domainName.isUnderPublicSuffix()) {
