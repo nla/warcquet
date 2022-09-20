@@ -382,7 +382,6 @@ public class Warc2Warcquet {
                     } catch (Exception e) {
                         System.err.println("Failed on " + warcFile);
                         e.printStackTrace();
-                        System.exit(1);
                     }
                 }
             }
