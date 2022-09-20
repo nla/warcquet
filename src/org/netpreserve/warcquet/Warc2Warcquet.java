@@ -67,6 +67,7 @@ public class Warc2Warcquet {
                 handleHttpResponse(response.http());
             } catch (ParsingException e) {
                 if (verbose) System.err.println(e);
+                return;
             }
         }
         startResponseOrResource(response, position);
@@ -223,7 +224,9 @@ public class Warc2Warcquet {
         if (event.getVia() == null && referrer != null) {
             event.setVia(referrer);
         }
-        writer.write(event);
+        if (event.getUrl() != null) {
+            writer.write(event);
+        }
         event = null;
         referrer = null;
     }
