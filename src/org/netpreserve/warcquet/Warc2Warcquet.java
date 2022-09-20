@@ -64,7 +64,11 @@ public class Warc2Warcquet {
     public void startResponse(WarcResponse response, long position) throws IOException {
         startResponseOrResource(response, position);
         if (response.contentType().equals(MediaType.HTTP_RESPONSE)) {
-            handleHttpResponse(response.http());
+            try {
+                handleHttpResponse(response.http());
+            } catch (ParsingException e) {
+                if (verbose) System.err.println(e);
+            }
         }
     }
 
@@ -131,7 +135,11 @@ public class Warc2Warcquet {
         revisit.refersToDate().ifPresent(event::setRefersToDate);
         revisit.headers().first("WARC-Refers-To-Target-URI").ifPresent(event::setRefersToUrl);
         if (revisit.contentType().equals(MediaType.HTTP_RESPONSE)) {
-            handleHttpResponse(revisit.http());
+            try {
+                handleHttpResponse(revisit.http());
+            } catch (ParsingException e) {
+                if (verbose) System.err.println(e);
+            }
         }
     }
 
@@ -161,10 +169,6 @@ public class Warc2Warcquet {
     }
 
     public void startRequest(WarcRequest request, long position) throws IOException {
-        if (request.contentType().equals(MediaType.HTTP_REQUEST)) {
-            event.setHttpMethod(request.http().method());
-            referrer = request.http().headers().first("Referer").orElse(null);
-        }
         request.ipAddress().ifPresent(event::setIpAddress);
         event.setRequestUUID(getRecordUUID(request));
         var payload = request.payload().orElse(null);
@@ -179,6 +183,14 @@ public class Warc2Warcquet {
             if (event.getRequestPayloadLength() > 0) {
                 event.setRequestPayloadSha1(sha1);
             }
+        }
+        try {
+            if (request.contentType().equals(MediaType.HTTP_REQUEST)) {
+                event.setHttpMethod(request.http().method());
+                referrer = request.http().headers().first("Referer").orElse(null);
+            }
+        } catch (ParsingException e) {
+            if (verbose) System.err.println(e);
         }
     }
 
