@@ -6,28 +6,28 @@ message WarcCaptureEvent {
     required int64 response_position;
     required int64 response_length;
     required binary response_record_type (STRING);
-    optional binary response_uuid;
+    optional fixed_len_byte_array(16) response_uuid (UUID);
     optional binary response_payload_type (STRING);
     optional int64 response_payload_length;
-    optional binary response_payload_sha1;
+    optional fixed_len_byte_array(20) response_payload_sha1;
 
     optional int64 request_position;
     optional int64 request_length;
-    optional binary request_uuid;
+    optional fixed_len_byte_array(16) request_uuid (UUID);
     optional binary request_payload_type (STRING);
     optional int64 request_payload_length;
-    optional binary request_payload_sha1;
+    optional fixed_len_byte_array(20) request_payload_sha1;
 
     optional binary refers_to_url (STRING);
     optional int64 refers_to_date (TIMESTAMP_MILLIS);
-    optional binary refers_to_uuid;
+    optional fixed_len_byte_array(16) refers_to_uuid (UUID);
 
     optional int32 http_status (INT_16);
     optional binary http_method (STRING);
     optional binary hops_from_seed(STRING);
     optional binary via (STRING);
     optional int32 ipv4;
-    optional binary ipv6;
+    optional fixed_len_byte_array(16) ipv6;
     optional binary redirect (STRING);
     optional binary software (STRING);
     optional binary software_version (STRING);
