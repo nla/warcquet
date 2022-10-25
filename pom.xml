@@ -83,7 +83,7 @@
             <!-- for parquet/hadoop-common -->
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
-            <version>6.2.7</version>
+            <version>6.4.0</version>
         </dependency>
         <dependency>
             <!-- for parquet/hadoop-common -->
